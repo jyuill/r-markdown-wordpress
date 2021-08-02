@@ -190,8 +190,8 @@ Once your R Markdown file is polished to your liking, you just need to run some 
             publish = FALSE,               ## FALSE to add as draft; TRUE to go direct to publish
             action = "newPost",            ## for new post; alternatives: "editPost", "newPage"
             #postid                        ## needed with editPost - get from WP interface
-            shortcode= TRUE,               ## optional
+            shortcode= FALSE,              ## optional - affects how code is shown; default FALSE
             categories= c('R Markdown'))   ## set categories, if desired
             
-So you can set up a standard file and substitute values for markdown file and title as needed. Of course, you want to **keep it private since you have password in there** - add to .gitignore if you have a public Github repo.
+You can set up a standard file and substitute values for markdown file and title as needed. Of course, you want to **keep it private since you have password in there** - add to .gitignore if you have a public Github repo.
             

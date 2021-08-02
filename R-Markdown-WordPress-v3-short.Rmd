@@ -65,9 +65,10 @@ Example using my personal collection of [Vancouver weather data](https://github.
 
 Idea here is to incorporate some Markdown common features that you may want to have in your blog post:
 
-* use of headings
+* basic html like headings, bullet lists
 * show code chunks
 * show data structure and summary
+    + allow for side-scrolling
 * data visualization - a couple of varieties
 * integrate dynamic values into text flow (with `r #<some code here>`)
 
@@ -176,5 +177,7 @@ Dry in summer, wet in winter - especially November, December and, to lesser exte
 
 Once your R Markdown file is polished to your liking, you just need to run some simple code to send it to WordPress:
 
-So you can set up a standard file and substitute values for markdown file and title as needed. Of course, you want to **keep it private since you have password in there** - add to .gitignore if you have a public Github repo.
+(code example intentionally left out)
+
+You can set up a standard file and substitute values for markdown file and title as needed. Of course, you want to **keep it private since you have password in there** - add to .gitignore if you have a public Github repo.
             
