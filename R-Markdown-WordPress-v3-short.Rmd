@@ -1,0 +1,180 @@
+---
+title: "Publish R Markdown to WordPress Blog - Yes You Can!"
+author: "JY"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message=FALSE,
+                      warning=FALSE,
+                      fig.height=3,
+                      fig.width=5)
+options(scipen = 99)
+options(digits=3)
+
+library(tidyverse)
+library(scales)
+library(plotly)
+library(here)
+```
+
+This post is based on an R Markdown file published directly to WordPress.com - and you can do it, too! It was made possible by the great work of others, shared in the following **highly recommended** resources:
+
+1. [RMarkdown pkg](https://github.com/duncantl/RWordPress) by Duncan Temple Lang (2012)
+2. [Publish blog posts from R + knitr to WordPress](https://yihui.org/knitr/demo/wordpress/) by Yihui Xie (2013)
+3. [How to Publish with R Markdown in WordPress](http://3.14a.ch/archives/2015/03/08/how-to-publish-with-r-markdown-in-wordpress/) by 3.14a (2015)
+4. [Blog Psoting from R Markdown to WordPress](http://sites.tufts.edu/emotiononthebrain/2017/08/12/blog-posting-from-r-markdown-to-wordpress/) by Heather Urry (2017)
+5. [How to Publish a Blog Post on WordPress using RMarkdown](https://tobiasdienlin.com/2019/03/08/how-to-publish-a-blog-post-on-wordpress-using-rmarkdown/)
+
+So nothing new here, other than recap of the above and confirmation that although the code behind this was produced in 2012-13, it **still works as of August, 2021**. :)
+
+RMarkdown file available in this Github repo: 
+
+## Steps
+
+Summary of steps to be taken to publish R Markdown on WordPress.
+
+1. [Install packages](#pkg) needed.
+2. Do some R Markdown - [example below](#markdown).
+3. [Publish to WordPress](#publish) by running separate code.
+
+## 1. Install Packages {#pkg}
+
+The key to the process is the **RWordPress* package, supported by the XMLRPC package, both of which you can get using the code below:
+
+```{r}
+## References
+## http://tabvizexplorer.com/how-to-upload-r-markdown-directly-to-wordpress/
+
+## Get required packages
+# if (!require('knitr')) {install.packages("knitr")}
+# if (!require('devtools')) {install.packages("devtools")}
+# if (!require('RWordPress')) {devtools::install_github(c("duncantl/XMLRPC", "duncantl/RWordPress"))}
+
+```
+
+As others have warned, the RWordPress package is no longer being maintained - so use at your own risk.
+
+The other key is the 'knit2wp' function in the knitr package, hence the need to install that if not already installed, as well. 
+
+## 2. Produce R Markdown {#markdown}
+
+Example using my personal collection of [Vancouver weather data](https://github.com/jyuill/proj-r-van-weather/raw/master/output/van-weather.csv) ;), taken from [Canadian government sources](https://climate.weather.gc.ca/climate_data/daily_data_e.html?hlyRange=2013-06-11%7C2021-07-31&dlyRange=2013-06-13%7C2021-07-30&mlyRange=%7C&StationID=51442&Prov=BC&urlExtension=_e.html&searchType=stnName&optLimit=yearRange&StartYear=1840&EndYear=2021&selRowPerPage=25&Line=39&searchMethod=contains&Month=7&Day=31&txtStationName=vancouver&timeframe=2&Year=2021), available to all.
+
+Idea here is to incorporate some Markdown common features that you may want to have in your blog post:
+
+* use of headings
+* show code chunks
+* show data structure and summary
+* data visualization - a couple of varieties
+* integrate dynamic values into text flow (with `r #<some code here>`)
+
+```{r}
+## data references
+data_url <- "https://github.com/jyuill/proj-r-van-weather/raw/master/output/van-weather.csv"
+file_save_url <- "data-raw/van-weather.csv"
+## fetch file if not already present
+if(!file.exists(file_save_url)){
+  download.file(url=data_url, destfile = file_save_url)
+}
+dataset <- read_csv(file_save_url)
+dataset$Date <- as.Date(dataset$Date)
+```
+
+### Annual Temperature Data (h3)
+
+To explore the data across the period covered, summarize by year.
+
+(*Show some code*)
+
+```{r, echo=TRUE}
+## summarize annual temperature
+annual_summary <- dataset %>% filter(Year<max(dataset$Year)) %>% ## remove most recent yr, since incomplete data
+  group_by(Year) %>% summarize(max_temp=max(Max.Temp, na.rm=TRUE),
+                               min_temp=min(Min.Temp, na.rm=TRUE),
+                               mean_daily_temp=mean(Mean.Temp, na.rm=TRUE),
+                               annual_precip=sum(Total.Precip, na.rm=TRUE)) 
+```
+
+Get a glimpse of the structure:
+
+```{r}
+glimpse(annual_summary)
+```
+
+Summary of the data:
+
+```{r}
+summary(annual_summary)
+```
+
+#### Annual temperature patterns across the period: (h4)
+
+(*Basic data viz - line chart using ggplot2*)
+
+```{r}
+## visualize
+tplot1 <- annual_summary %>% 
+  ggplot(aes(x=Year))+
+  geom_line(aes(y=mean_daily_temp), color='black')+
+  geom_line(aes(y=max_temp), color='red')+
+  geom_line(aes(y=min_temp), color='blue')+
+  labs(title="Annual Max., Min., and Mean (Daily) Temperature",
+       y='Temperature (celsius)')+
+  theme_light()
+
+tplot1
+```
+
+I'm no climatologist, and this is very imprecise data exploration, but appears like there might be a gradual upward drift in temperatures over this relatively short period.
+
+### Annual Precipitation (h3)
+
+Vancouver is famous for it's rainfall. How much rain has Vancouver received each year over the period covered? (`r min(annual_summary$Year)` to `r max(annual_summary$Year)`) <br />
+(*years based on dynamic reference to data source*)
+
+```{r}
+pplot1 <- annual_summary %>% ggplot(aes(x=Year, y=annual_precip))+geom_col()+
+  geom_hline(yintercept = mean(annual_summary$annual_precip), linetype='dashed')+
+  geom_hline(yintercept = median(annual_summary$annual_precip), linetype='dotted')+
+  scale_y_continuous(labels=comma, expand=expansion(mult=c(0,0.1)))+
+  theme_classic()+
+  labs(title="Annual Total Precipitation",
+       subtitle="(dashed line=ave., dotted line=median)",
+       y="Precipitation (mm)")
+
+ggplotly(pplot1)
+```
+
+That's right...Vancouver frequently gets **over 1,000 mm - 1 meter - of rain** in a year!
+
+* average for last 50 years:`r mean(annual_summary$annual_precip)` per year
+* median over last 50 years: `r median(annual_summary$annual_precip)` per year
+
+### Monthly Precipitation Patterns (h3)
+
+Surely the rain is not steady all year long? What are the monthly patterns?
+
+(*Another visualization, this time with plotly (via ggplotly() function) for more interactivity.*)
+
+```{r}
+yr_mth_precip <- dataset %>% group_by(Year, Month) %>% summarize(mthly_precip=sum(Total.Precip))
+  
+mpplot1 <- yr_mth_precip %>%  ggplot(aes(x=as.factor(Month), y=mthly_precip))+geom_boxplot()+
+  theme_bw()+
+  labs(title="Monthly Patterns in Precipitation",
+       x='Month of Year', y='Precipitation (mm)')
+  
+ggplotly(mpplot1)
+```
+
+Dry in summer, wet in winter - especially November, December and, to lesser extent, January. By May, we're *usually* safely out of the rainy season. Until October rolls around and the rains set in again.
+
+## 3. Publishing to WordPress {#publish}
+
+Once your R Markdown file is polished to your liking, you just need to run some simple code to send it to WordPress:
+
+So you can set up a standard file and substitute values for markdown file and title as needed. Of course, you want to **keep it private since you have password in there** - add to .gitignore if you have a public Github repo.
+            

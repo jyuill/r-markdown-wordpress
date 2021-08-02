@@ -1,0 +1,73 @@
+---
+title: "R-Markdown-Wordpress-test"
+author: "John Yuill"
+date: "February 18, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(googledrive)
+```
+
+## R Markdown to Wordpress
+
+Uses:
+
+* library(RWordPress)
+* library(knitr) options 
+
+to upload html output from R Markdown to a Wordpress blog.
+
+## References
+
+Key references include:
+
+* Yihui Xie's blog post (developer of knitr pkg, incl. knit2wp function) <https://yihui.name/knitr/demo/wordpress/>
+* Details on additional options: <http://3.14a.ch/archives/2015/03/08/how-to-publish-with-r-markdown-in-wordpress/>
+
+<strong>Note:</strong> most online resources refer to Word**P**ressLogin and Word**P**ressURL (capital **'P'**) in options but I could only get it to work with **lowercase 'p'** as in Yihui's example. 
+
+
+## Example
+
+```{r cars}
+summary(cars)
+```
+
+## Will Upload Plots - but tricky
+
+You can also upload embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+I used the code from the [detailed blog](http://3.14a.ch/archives/2015/03/08/how-to-publish-with-r-markdown-in-wordpress/) referenced above:
+
+'To Upload plots: set knitr options'
+
+```{r echo=TRUE, eval=FALSE}
+opts_knit$set(upload.fun = function(file){library(RWordPress);uploadFile(file)$url;})
+```
+
+This worked but with warnings about deprecated functions - may not be sustainable.
+
+## Alternative handling of graphics
+
+Idea was to upload to Google Drive, use link to file. Doesn't work because Wordpress doesn't recognize that the link is an image file. :P
+
+```{r longley-gnp}
+#str(longley)
+ggplot(longley, aes(x=Year, y=GNP))+geom_line()
+## ggsave automatically saves previous plot by default (can be managed)
+ggsave(filename='longley-gnp.png', device='png', path='figures')
+
+## upload file to GDrive
+#drive_upload(media='figures/longley-gnp.png', #path=as_id('1514PZY5fZglqPadDLAc8Ug6cJTsct8Ta'))
+
+```
+
+<file link here>
