@@ -30,7 +30,7 @@ This post is based on an R Markdown file published directly to WordPress.com - a
 
 So nothing new here, other than recap of the above and confirmation that although the code behind this was produced in 2012-13, it **still works as of August, 2021**. :)
 
-Note that since my blog is on WordPress.com, I'm focusing on that environment. Resources above cover variations to the process required for a WordPress.org site. 
+Note that since my blog is on [WordPress.com](https://wordpress.com) hosted site, I'm focusing on that environment. Resources above cover variations to the process required for a self-hosted [WordPress.org](https://wordpress.org/) site. 
 
 RMarkdown file available in this Github repo: https://github.com/jyuill/r-markdown-wordpress 
 

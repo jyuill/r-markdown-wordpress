@@ -3,28 +3,31 @@
 library(RWordPress)
 library(knitr)
 
-## set up values needed
+## set up initial credentials & values needed
 source('credite.R')
-blogthumbnail <- "figure/temperature-plot-1.png"
-blogfile <- "R-Markdown-WordPress.Rmd"
-blogtitle <- "Publish R Markdown to WordPress site? Yes You Can!"
-blogaction <- "newPost" ## "newPost", "editPost", "newPage"
-blogpostid <- ""
-blogcat <- c('R Stats', 'R Markdown')
-
 options(WordpressLogin= c(johnyuill=wp_p),
-       WordpressURL=paste0('https://',wp_blog,'.wordpress.com/xmlrpc.php'))
+        WordpressURL=paste0('https://',wp_blog,'.wordpress.com/xmlrpc.php'))
 
-# Include toc (comment out if not needed)
-## this works but uses ALL headings - don't know how to limit
-#library(markdown)
-#options(markdown.HTML.options = c(markdownHTMLOptions(default = T),"toc"))
-
-# Upload plots: set knitr options
+# Set up Upload plots: set knitr options
 ## - saves files in a folder in WordPress
 ## can be found in Media section by date; will be named: <name of code chunk>-1.png
 ## - can edit caption, alt text, description, get URL
 opts_knit$set(upload.fun = function(file){library(RWordPress);uploadFile(file)$url;})
+
+# Include toc (comment out if not needed - if used, then abandoned, need to restart R session)
+## this works but uses ALL headings - don't know how to limit
+#library(markdown)
+#options(markdown.HTML.options = c(markdownHTMLOptions(default = T),"toc"))
+
+## KEY VARIABLES #############################################################
+## info needed to run main code below
+blogthumbnail <- "figure/temperature-plot-1.png"
+blogfile <- "R-Markdown-WordPress.Rmd"
+blogtitle <- "Publish R Markdown to WordPress site? Yes You Can!"
+blogaction <- "newPost" ## "newPost", "editPost", "newPage"
+blogpostid <- "" ## needed with editPost
+blogcat <- c('R Stats', 'R Markdown')
+##############################################################################
 
 # Upload featured image / post thumbnail: option: wp_post_thumbnail=postThumbnail$id
 postThumbnail <- RWordPress::uploadFile(blogthumbnail,overwrite = TRUE)
