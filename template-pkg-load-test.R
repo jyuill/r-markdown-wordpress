@@ -5,7 +5,8 @@ library(devtools)
 install("../templateRmd")
 
 ## from GITHUB
-install_github(repo="jyuill/templateRmd")
+## skip library(devtools)
+devtools::install_github(repo="jyuill/templateRmd")
 
 ## 2. LOAD
 library(templateRmd)
