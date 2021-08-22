@@ -1,0 +1,158 @@
+---
+title: "Leverage Google Trends in R for Durability and Scalability"
+author: "`r Sys.getenv('USER')`"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message=FALSE,
+                      warning=FALSE,
+                      fig.height=4,
+                      fig.width=6)
+options(scipen = 99)
+options(digits=3)
+
+library(gtrendsR)
+library(tidyverse)
+library(scales)
+library(lubridate)
+library(viridis)
+```
+
+[Google Trends](https://trends.google.com/trends/) is a popular tool for all manner of curiousity, including serious research, related to trends in search activity on the Google search engine: what topics are trending? what are trends for a given search term? how does this compare to other terms? And lots more.
+
+Google Trends has recently passed its 15th birthday, which promoted folks at Google to write a blog post on ["15 Tips for Getting the Most Out of Google Trends"](https://blog.google/products/search/15-tips-getting-most-out-google-trends/). One thing they noted right at the start is that they used Google Trends to identify search queries related to Google Trends in order to prioritize content for a blog post. This is a classic use case - using Google Trends to fuel content decisions for your marketing.
+
+An important thing to point out is that Google is not reporting a number that represents or translates to an *actual* number of searches. This search interest presented is indexed between 0 and 100, which 100 representing the peak search interest during the particularly date range reported on. Everything is relative in Google Trends.
+
+## Going Beyond the Interface
+
+Google Trends is a convenient, intuitive interface that can be great for playing around with. If you want to get more serious about working with the data and sharing with others, you can **export** info to a spreadsheet. This comes with limitations, though: you have to export data for each component in the interface separately, you may lose source information. And if you want to make any adjustments (geography, category, add terms) you have to go back in there and repeat the process.
+
+Working with Google Trends in R offers a much more efficient solution...
+
+## Google Trends in R
+
+Google does not provide an official API for Google Trends but the [**gtrendsR**](https://cran.r-project.org/web/packages/gtrendsR/gtrendsR.pdf) R package created by Philippe Massicotte is a major helper in the accessing Google Trends data within R for reporting and analysis. Along with all the benefits of using R to process and analyze data, the gtrendsR package provides some big advantages over using the Google Trends Interface:
+
+* Durability: don't have to go to the interface and fetch the data each time, you have an on-going reference with source info. You have code that can be referred to, re-used, and shared with others.
+* Scalability: can expand on existing queries, going beyond the limit of 5 that are available in the tool.
+
+## Google Trends Parameters
+
+Google Trends has a number of parameters that can be used to fine-tune your search: date ranges, geo data, categories, Google properties. These are **available via the gtrendsR package**, corresponding to the options in the Google Trend online interface. You just have to know how to tap into them:
+
+* **Dates**:
+    + "now 1-H": last hour - by MINUTE
+    + "now 4-H": last 4 hrs - by MINUTE
+    + "now 1-d": last day - every 8 MINUTES
+    + "now 7-d": last 7 days - HOURLY data
+    + "today 1-m": last 30 days - DAILY data
+    + "today 3-m": last 90 days - DAILY data
+    + "today 12-m": last 12 months - WEEKLY data
+    + "today+5-y": last 5 yrs (default) - WEEKLY data
+    + "all" since beginning of Google Trends 2004
+    + "YYYY-MM-DD YYYY-MM-DD": custom start / end date - granularity will depend on time spans above
+<br />    
+* **Geo**:
+   + use gtrendsR::countries to see complete list
+   + close to 110,000 options, including country / state / city
+   + code below shows how to filter for countries
+   + **geo=""** for all countries
+<br />   
+* **Categories**:
+    + use gtrendsR::categories
+    + over 1,400 categories, with ids that are used in the query
+    + **category = 0** for all categories
+<br />    
+* **Google properies**:
+    + specify one or more of 'web', 'news', 'images', 'froogle', 'youtube'
+    + gprop=c("web", "youtube") as example for web and youtube search
+
+## Setup - Libraries
+
+There's basically no setup required - no credentials, etc. Only need to load the packages you intend to use.
+
+```{r libraries}
+library(gtrendsR) ## package for accessing Google Trends
+library(tidyverse)
+library(lubridate)
+library(scales)
+
+## set default ggplot2 chart theme
+theme_set(theme_light())
+```
+
+## Example 1: single term
+
+Using the gtrendsR package to get Google Trends for a single search term.
+
+```{r}
+## basic search
+gt_results <- gtrends(keyword='cryptocurrency',
+        geo="",
+        time="now 7-d",
+        gprop=c("web"),
+        category=0)
+```
+
+The query returns a bundle of 7 data frames with different info, reflecting what is shown in the Google Trends interface:
+
+```{r}
+names(gt_results)
+```
+
+### Interest over time
+
+The **'interest_over_time'** data frame is the main data object, with relative search volume for the selected search term, country, period, property, and category.
+
+```{r search-interest-over-time}
+chart_title <- "Searches for: cryptocurrency"
+sub_title <- "Period: past 7 days; Geo: world; Prop: 'web'; Category: all"
+
+## create chart based on search interest over time
+gt_results$interest_over_time %>% ggplot(aes(x=date, y=hits, color=keyword))+geom_line()+
+  labs(title=chart_title, subtitle=sub_title, x="", y="")
+```
+
+### Related Topics
+
+The 'related_topics' data frame holds data on queries related to the main search term ('cryptocurrency' in this case).
+
+```{r}
+str(gt_results$related_topics)
+```
+
+* subject: relative value to main search term
+* related_topics: contains 'top' topics and 'rising' topics
+* value: related topic
+* keyword: main search term
+* category: search term category, if applicable
+
+```{r related-topics}
+  chart_title <- "crytopcurrency: related topics"
+  ## 
+  top <- gt_results$related_topics %>% filter(related_topics=='top' & !is.na(subject) &
+                                                subject!='<1')
+  ## convert value to factor and subject to numeric
+  top$value <- as.factor(top$value)
+  top$subject <- as.numeric(top$subject)
+  ## PLOT related topics
+  top %>% ggplot(aes(x=reorder(value, subject), y=subject))+geom_col()+
+  coord_flip()+
+    scale_y_continuous(expand=expansion(add=c(0,10)))+
+    labs(title=chart_title, y='', x='')
+```
+
+## Additional References
+
+Other useful references for working with gtrendsR and Google Trends:
+
+* [gtrendsR vignette](https://cran.r-project.org/web/packages/gtrendsR/gtrendsR.pdf)
+* https://blog.quiet.ly/industry/exploring-google-trends-explore-function-finding-keywords-queries/ 
+* https://blog.google/products/search/15-tips-getting-most-out-google-trends/
+    + this is the more authoritative and recent blog post
+
+

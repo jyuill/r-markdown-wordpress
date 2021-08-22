@@ -21,9 +21,10 @@ opts_knit$set(upload.fun = function(file){library(RWordPress);uploadFile(file)$u
 
 ## KEY VARIABLES #############################################################
 ## info needed to run main code below
-blogthumbnail <- "figure/temperature-plot-1.png"
-blogfile <- "R-Markdown-WordPress.Rmd"
-blogtitle <- "Publish R Markdown to WordPress site? Yes You Can!"
+blogfldr <- "google-trends" ## specify folder that blog post is in
+blogthumbnail <- "/figure/search-interest-over-time-01.png" ## plots are stored in the top-level 'figure' folder
+blogfile <- paste0(blogfldr,"/google-trends-01.Rmd")
+blogtitle <- "Google Trends in R: Leverage gtrendsR Package for Efficiency and Scalability"
 blogaction <- "newPost" ## "newPost", "editPost", "newPage"
 blogpostid <- "" ## needed with editPost
 blogcat <- c('R Stats', 'R Markdown')
@@ -33,7 +34,7 @@ blogcat <- c('R Stats', 'R Markdown')
 postThumbnail <- RWordPress::uploadFile(blogthumbnail,overwrite = TRUE)
 
 ## UPLOAD TO WORDPRESS
-knit2wp(blogfile, ## markdown file to publish
+knit2wp(input=blogfile, ## markdown file to publish
         title = blogtitle, ## title for the post in WordPress
         publish = FALSE, ## FALSE to add as draft; TRUE to go direct to publish
         action = blogaction, # "newPost" for new post; alternatives: "editPost", "newPage"

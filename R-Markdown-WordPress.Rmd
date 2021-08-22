@@ -22,11 +22,11 @@ library(here)
 
 This post is based on an R Markdown file published directly to WordPress.com - and you can do it, too! It was made possible by the great work of others, shared in the following **highly recommended** resources:
 
-1. [RMarkdown pkg](https://github.com/duncantl/RWordPress) by Duncan Temple Lang (2012)
+1. [RWordPress pkg](https://github.com/duncantl/RWordPress) by Duncan Temple Lang (2012) - there was a helpful vignette but can't find it any longer
 2. [Publish blog posts from R + knitr to WordPress](https://yihui.org/knitr/demo/wordpress/) by Yihui Xie (2013)
 3. [How to Publish with R Markdown in WordPress](http://3.14a.ch/archives/2015/03/08/how-to-publish-with-r-markdown-in-wordpress/) by 3.14a (2015)
 4. [Blog Posting from R Markdown to WordPress](http://sites.tufts.edu/emotiononthebrain/2017/08/12/blog-posting-from-r-markdown-to-wordpress/) by Heather Urry (2017)
-5. [How to Publish a Blog Post on WordPress using RMarkdown](https://tobiasdienlin.com/2019/03/08/how-to-publish-a-blog-post-on-wordpress-using-rmarkdown/)
+5. [How to Publish a Blog Post on WordPress using RMarkdown](https://tobiasdienlin.com/2019/03/08/how-to-publish-a-blog-post-on-wordpress-using-rmarkdown/) by Tobias Deinlin (2019)
 
 So nothing new here, other than recap of the above and confirmation that although the code behind this was produced in 2012-13, it **still works as of August, 2021**. :)
 
@@ -103,10 +103,10 @@ annual_summary <- dataset %>% filter(Year<max(dataset$Year)) %>% ## remove most 
                                annual_precip=sum(Total.Precip, na.rm=TRUE)) 
 ```
 
-Get a glimpse of the structure:
+Check out the data structure:
 
 ```{r}
-glimpse(annual_summary)
+str(annual_summary)
 ```
 
 Summary of the data:
@@ -210,8 +210,9 @@ Or at least things I haven't figured out how to do yet:
 
 1. **No plotly plots**: render fine in R Markdown don't make it to WP.
 2. **Internal anchor links**: tricky to set internal anchor links. Using {#anchor-name} beside heading works in R Markdown, but shows up as printed text in WP; using html like h2 tag with id="anchor-name" works in WP and R Markdown knit but doesn't show up as heading in document outline - which can be a pain for long docs.
+3. **glimpse** function: for some reason, using the glimpse() function seems to throw an error. (caused me several hrs of trouble-shooting)
 
-If I find any solutions, I'll pass along updates.
+If I find solutions to these - or uncover more limitations - I'll pass along updates.
 
 ## Alternatives
 

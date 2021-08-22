@@ -36,7 +36,7 @@ knit2wp(blogfile, ## markdown file to publish
         title = blogtitle, ## title for the post in WordPress 
         publish = FALSE, ## FALSE to add as draft; TRUE to go direct to publish
         action = blogaction, # "newPost" for new post; alternatives: "editPost", "newPage"
-        #postid=blogpostid, ## needed with editPost - get from WP interface
+        postid=blogpostid, ## needed with editPost - get from WP interface
         shortcode= FALSE, ## affects how source code is displayed; default is FALSE
         categories=blogcat, ## categories for blog post (need to be added first)
         wp_post_thumbnail=postThumbnail$id) 
