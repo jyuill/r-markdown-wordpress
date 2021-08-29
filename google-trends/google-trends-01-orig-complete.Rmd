@@ -9,8 +9,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE,
                       message=FALSE,
                       warning=FALSE,
-                      fig.height=5,
-                      fig.width=8)
+                      fig.height=4,
+                      fig.width=6)
 options(scipen = 99)
 options(digits=3)
 
@@ -242,15 +242,15 @@ As noted, there is the same limitation as the interface of *maximum five terms* 
 
 Tip #3 in ["15 Tips for Getting the Most Out of Google Trends"](https://blog.google/products/search/15-tips-getting-most-out-google-trends/) mentions the importance of **choosing search 'topics' when available** for a given search term. 
 
+```{r, echo=FALSE, fig.width=400, caption='google trends search types'}
+include_graphics(here('figure','google-trends-search-type-example-full.png'))
+```
+
 Using a topic version of the term has benefits, but also complications for programmatic access:
 
 * you need to go to Google Trends to check if a topic is available (it may also be called something different than 'topic', like 'currency' for the term 'Bitcoin').
 * the topic term is an indecipherable code, as circled in the URL in the browser bar above.
 * comparisons may be skewed if mixing terms and topics.
-
-```{r, echo=FALSE, fig.width=400, caption='google trends search types'}
-include_graphics(here('figure','google-trends-search-type-example-full.png'))
-```
 
 The best way to handle this situation:
 
@@ -263,7 +263,7 @@ So you may have to decide between using the topic version or the basic search te
 
 ### Example with topics
 
-```{r, echo=FALSE, fig.width=400, caption='google trends search topics'}
+```{r, echo=FALSE, fig.width=400, caption='google trends search types'}
 include_graphics(here('figure','google-trends-topic-crypto-bitcoin.png'))
 ```
 
@@ -302,7 +302,7 @@ gt_interest <- gt_interest %>% mutate(
 )
 ```
 
-```{r google-trends-topics-bar-line, fig.height=3.5, fig.width=10}
+```{r google-trends-topics-bar-line, fig.height=3, fig.width=8}
 ## create chart based on search interest over time
 pint1 <- gt_interest %>% ggplot(aes(x=date, y=hits, color=keyword))+geom_line(size=2)+
   scale_y_continuous(expand=expansion(add=c(0,0)))+
@@ -318,7 +318,16 @@ pint2 <- gt_interest %>% group_by(keyword) %>% summarize(avg_int=mean(hits)) %>%
         axis.text.x = element_blank())+
   labs(x="Average", y="")
 
-grid.arrange(pint2, pint1, nrow=1, widths=c(2,8))
+grid.arrange(pint2, pint1, nrow=1, widths=c(1,8))
+```
+
+```{r google-trends-topics-line, fig.height=3, fig.width=8}
+## create chart based on search interest over time
+gt_interest %>% ggplot(aes(x=date, y=hits, color=keyword))+geom_line(size=2)+
+  scale_y_continuous(expand=expansion(add=c(0,0)))+
+  scale_color_manual(values=c("red","blue"))+
+  theme(legend.position = 'top')+
+  labs(x="", y="")
 ```
 
 ## Wrap-up and Additional References
@@ -335,4 +344,5 @@ Other useful references for working with gtrendsR and Google Trends:
     + the more authoritative and recent blog post mentioned above
     
 Happy trending!
+
 
