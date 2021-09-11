@@ -190,7 +190,7 @@ Once your R Markdown file is polished to your liking, you just need to run some 
            WordpressURL=paste0('https://<blog name>.wordpress.com/xmlrpc.php'))
     
     3. setup to upload plots
-     - saves files in MordPress Media section by date, named after code chunk
+     - saves files in WordPress Media section by date, named after code chunk
     opts_knit$set(upload.fun=function(file){library(RWordPress);uploadFile(file)$url;})
 
     4. knit to WP
@@ -201,6 +201,9 @@ Once your R Markdown file is polished to your liking, you just need to run some 
             #postid                        ## needed with editPost - get from WP interface
             shortcode= FALSE,              ## optional - affects how code is shown; default FALSE
             categories= c('R Markdown'))   ## set categories, if desired
+            
+    5. Upload featured image / post thumbnail: option: wp_post_thumbnail=postThumbnail$id
+    postThumbnail <- RWordPress::uploadFile("figure/<image file>",overwrite = TRUE)
 
 You can set up a standard file and substitute values for markdown file and title as needed. Of course, you want to **keep it private since you have password in there** - add to .gitignore if you have a public Github repo.
             

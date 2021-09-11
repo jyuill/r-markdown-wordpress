@@ -9,8 +9,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE,
                       message=FALSE,
                       warning=FALSE,
-                      fig.height=5,
-                      fig.width=8)
+                      fig.height=6,
+                      fig.width=9)
 options(scipen = 99)
 options(digits=3)
 
@@ -45,8 +45,8 @@ An important point is that Google Trends does not represent or translate to an *
 ## 1. can add this text to body of markdown - less flexible output, harder to size
 # ![Google Trends Interface](images/google-trends-interface-page-crypto.png)
 
-## 2. preferred/recommended: in code 
-knitr::include_graphics(here('figure','google-trends-interface-page-crypto.png'))
+## 2. preferred/recommended: in code (need knitr pkg)
+include_graphics(here('figure','google-trends-interface-page-crypto.png'))
 ```
 
 Google Trends is a convenient, intuitive interface packed with info that can be great for playing around with, but comes with limitations for tracking trends over time, sharing with others, analyzing more deeply. You can **export** to a spreadsheet, but this comes with inefficiencies as well: you have to export data for each component in the interface separately and you may lose source information. And if you want to make any adjustments (change date range, geography, category, add terms) you have to go back in there and repeat the process.
@@ -312,7 +312,7 @@ pint1 <- gt_interest %>% ggplot(aes(x=date, y=hits, color=keyword))+geom_line(si
 
 pint2 <- gt_interest %>% group_by(keyword) %>% summarize(avg_int=mean(hits)) %>%
   ggplot(aes(x=keyword, y=avg_int, fill=keyword))+geom_col()+
-  scale_y_continuous(limit=c(0,100))+
+  scale_y_continuous(limit=c(0,100), expand=expansion(mult=c(0,0.1)))+
   scale_fill_manual(values=c("red","blue"))+
   theme(legend.position = 'none',
         axis.text.x = element_blank())+

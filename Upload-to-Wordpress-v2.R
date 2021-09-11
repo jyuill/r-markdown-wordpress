@@ -24,15 +24,15 @@ opts_knit$set(upload.fun = function(file){library(RWordPress);uploadFile(file)$u
 blogthumbnail <- "figure/temperature-plot-1.png"
 blogfile <- "R-Markdown-WordPress.Rmd"
 blogtitle <- "Publish R Markdown to WordPress site? Yes You Can!"
-blogaction <- "newPost" ## "newPost", "editPost", "newPage"
-blogpostid <- "" ## needed with editPost
+blogaction <- "editPost" ## "newPost", "editPost", "newPage"
+blogpostid <- "859" ## needed with editPost
 blogcat <- c('R Stats', 'R Markdown')
 ##############################################################################
 
 ## run function - including saving plot images in figure folder
 knit2wp(blogfile, ## markdown file to publish 
         title = blogtitle, ## title for the post in WordPress 
-        publish = FALSE, ## FALSE to add as draft; TRUE to go direct to publish
+        publish = TRUE, ## FALSE to add as draft; TRUE to go direct to publish
         action = blogaction, # "newPost" for new post; alternatives: "editPost", "newPage"
         postid=blogpostid, ## needed with editPost - get from WP interface
         shortcode= FALSE, ## affects how source code is displayed; default is FALSE
