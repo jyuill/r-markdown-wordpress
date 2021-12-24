@@ -29,6 +29,9 @@ blogpostid <- "859" ## needed with editPost
 blogcat <- c('R Stats', 'R Markdown')
 ##############################################################################
 
+# Upload featured image / post thumbnail: option: wp_post_thumbnail=postThumbnail$id
+postThumbnail <- RWordPress::uploadFile(blogthumbnail,overwrite = TRUE)
+
 ## run function - including saving plot images in figure folder
 knit2wp(blogfile, ## markdown file to publish 
         title = blogtitle, ## title for the post in WordPress 
@@ -39,5 +42,3 @@ knit2wp(blogfile, ## markdown file to publish
         categories=blogcat, ## categories for blog post (need to be added first)
         wp_post_thumbnail=postThumbnail$id) 
 
-# Upload featured image / post thumbnail: option: wp_post_thumbnail=postThumbnail$id
-postThumbnail <- RWordPress::uploadFile(blogthumbnail,overwrite = TRUE)
