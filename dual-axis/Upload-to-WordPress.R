@@ -1,17 +1,21 @@
 ## Upload R Markdown Blog Post to Wordpress Blog
 ## reference: https://catbirdanalytics.wordpress.com/2021/08/02/publish-r-markdown-to-wordpress-site-yes-you-can/
+## This file will work from within any repo/folder - as long as the KEY VARIABLES are adjusted accordingly.
+## However: it is recommended that the blog post .Rmd file be copied into a dedicated folder in the 
+## r-markdown-wordpress repo for better organization, etc.
 
 library(RWordPress)
 library(knitr)
+library(here)
 
 ## KEY VARIABLES #############################################################
 ## usually only changes needed; check knit2wp function
 ## -- FOLDER: specify folder that blog post is in
-blogfldr <- "google-trends"
+blogfldr <- "dual-axis"
 ## -- RMARKDOWN file to publish
-blogfile <- paste0(blogfldr,"/google-trends-01.Rmd")
+blogfile <- paste0(blogfldr,"/Dual-Axis-Temptation.Rmd")
 ## -- BLOG TITLE
-blogtitle <- "Google Trends + R: Leverage gtrendsR Package for More Powerful Analytics"
+blogtitle <- "The Temptation of Dual-Axis Charts"
 ## --  PUBLISH or DRAFT?
 pub <- FALSE ## TRUE to publish; FALSE for draft
 ## -- NEW OR EDIT? 
@@ -19,9 +23,9 @@ blogaction <- "newPost" ## "newPost", "editPost", "newPage"
 ## -- ID: needed for EDIT -> need to **UNCOMMENT postid** in knit2wp function
 blogpostid <- "" ## needed with editPost - can get from WP interface, click on post to edit, check URL
 ## -- CATEGORY - needs to be added previously in WP
-blogcat <- c('R Stats', 'R Markdown')
+blogcat <- c('R Stats', 'R Markdown', 'Dataviz')
 ## -- THUMBNAIL: specific plot; plots are stored in the top-level 'figure' folder
-blogthumbnail <- "figure/search-interest-over-time-1.png" 
+blogthumbnail <- paste0(blogfldr,"/images/btc-ada-thumbnail.png") 
 ##############################################################################
 
 ## CREDENTIALS: set up initial credentials & values needed
