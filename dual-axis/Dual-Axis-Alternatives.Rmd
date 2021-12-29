@@ -25,6 +25,7 @@ library(here)
 library(quantmod)
 library(PerformanceAnalytics)
 library(kableExtra)
+library(caret) ## used for normalization of the data
 
 theme_set(theme_minimal())
 ```
@@ -54,15 +55,18 @@ crypto_data <- read_csv(here('dual-axis','input','btc-ada-price.csv'))
 
 Same example as previous post: prices history of two different crypotcurrencies - Cardano, with its token ADA and Bitcoin (BTC). 
 
-As always, the visualization choice should be based on **what questions we are trying to answer** and **what we are hoping to learn**. The visualization should then be judged against effectiveness in shedding light on these questions.
+To recap our initial setup:
 
-So we may have questions like:
+As always, the visualization choice should be based on **what questions we are trying to answer**, **what we are hoping to learn**, and, ultimately **what decisions we want to make**. 
+
+If we are starting with general exploration, we still need to frame it up. Our first thought may be to compare prices over a recent period, to answer questions like:
 
 * What are the relative changes in the currencies over time?
 * Do the two follow a similar pattern of ups and downs?
 * Are there any points where a general pattern breaks? (could provide focus for further investigation)
+* Eventually: are there ways we can take advantage of these patterns to make investment decisions? (probably beyond initial scope but helps to have that broader perspective) 
 
-In this random sample of recent data (Cdn$), we can see the two sets of prices are on much different scales!
+In this random sample of recent data (Cdn$), we can see the two sets of prices are on much different scales.
 
 ```{r}
 ## get random sample of row numbers
@@ -75,7 +79,7 @@ summary(crypto_data) %>% kable %>% kable_styling(full_width = FALSE, position='l
 
 ### Line charts stacked vertically
 
-```{r crypto-plot-01, echo=TRUE, fig.height=4, fig.width=6}
+```{r crypto-lines-01, echo=TRUE, fig.height=4, fig.width=6}
 cp01 <- crypto_data %>% ggplot(aes(x=date, y=BTC_CAD))+geom_line()+
   scale_y_continuous(labels=dollar_format())+
   labs(title='BTC (top) and ADA (bottom) prices (CDN$)', x='')+
@@ -87,51 +91,264 @@ cp02 <- crypto_data %>% ggplot(aes(x=date, y=ADA_CAD))+geom_line()+
 plot_grid(cp01, cp02, nrow=2, align='v')
 ```
 
-* still scale comparison issues but at least more interpretable
-* add correlation here?
+Here we still have the issue of scale ratios, but we have some advantages:
 
-```{r}
-cor.test(crypto_data$BTC_CAD, crypto_data$ADA_CAD)
+* clear and easy to see which dataset is which.
+* separating the lines puts the focus on general pattern comparison, doesn't create as strong an implication around magnitude of comparative changes and doesn't create distractions like cross-over points, which are meaningless. 
+
+We are able to focus on the comparison, not on bending our mind around untangling the lines. This might more easily lead to a follow-up question, like:
+
+* seems to be some similarity in the trends but not super-consistent, I wonder what the correlation between the lines is?
+
+```{r, echo=TRUE}
+corel <- cor.test(crypto_data$BTC_CAD, crypto_data$ADA_CAD)
+corelcoef <- corel$estimate
+corelci_lower <- corel$conf.int[1]
+corelci_upper <- corel$conf.int[2]
 ```
 
-```{r}
-crypto_data %>% ggplot(aes(x=BTC_CAD, y=ADA_CAD))+geom_point()+
-  geom_smooth(method='lm')
-```
+Quick calculation shows **r= `r corelcoef`**, which is not that strong, and the 95% confidence interval is between `r corelci_lower` and `r corelci_upper`, which seems pretty wide, lowering our sense of the strength of the relationship even further.
 
+There's a whole other rabbit hole we can go down here, if we choose - creating scatterplots and all kinds of things - but for our purposes we'll continue with other visualization strategies.
 
+### % Change Comparison
 
-### % chg
+Since a key part of what we are trying to understand is relative change in prices, a logical approach to get away from scale issue is to look at % changes. After calculation, we can get this view:
 
-```{r}
+```{r crypto-pc-lines-01, echo=TRUE}
+## calculate % changes day-over-day
 crypto_data_pc <- crypto_data %>% mutate(BTC_CAD_pc=BTC_CAD/lag(BTC_CAD)-1,
                                          ADA_CAD_pc=ADA_CAD/lag(ADA_CAD)-1)
+crypto_data_pc <- crypto_data_pc[-1,]
+## produce chart of % changes for each currency
 crypto_data_pc %>% ggplot(aes(x=date, y=BTC_CAD_pc))+geom_line(color='goldenrod')+
   scale_y_continuous(labels=percent_format())+
-  geom_line(aes(y=ADA_CAD_pc), color='blue')
+  geom_line(aes(y=ADA_CAD_pc), color='blue')+
+  labs(title='Daily % Changes in Prices (gold=BTC, blue=ADA)', x="", y='Daily % Chg')
 ```
 
-* shorten period for readability
-* calc change over longer periods (WoW rather than DoD)
-* try bars?
+Pretty messy with this amount of data, but hopefully you can see how this approach could be useful in comparing the two currencies. This could be made more readable by either zooming in on shorter period OR aggregrating the data by week or month. 
 
+Here's the example with weeks (using Lubridate pkg to choosing weekday==7 ):
+
+```{r crypto-pc-wk-lines-01, echo=TRUE}
+## use lubridate to get day of week for each date, filter for single day of week, calc WoW % chg
+crypto_data_pc_wk <- crypto_data %>% mutate(
+  weekday=wday(date)
+) %>% filter(weekday==7) %>% mutate(
+  BTC_CAD_pc=BTC_CAD/lag(BTC_CAD)-1,
+  ADA_CAD_pc=ADA_CAD/lag(ADA_CAD)-1
+)
+crypto_data_pc_wk <- crypto_data_pc_wk[-1,] ## drop first row, since NA for % chg
+## plot weekly change comparison
+crypto_data_pc_wk %>% ggplot(aes(x=date, y=BTC_CAD_pc))+geom_line(color='goldenrod')+
+  scale_y_continuous(labels=percent_format())+
+  geom_line(aes(y=ADA_CAD_pc), color='blue')+
+  labs(title='Weekly % Changes in Prices (gold=BTC, blue=ADA)', x="", y='Daily % Chg')
+```
+
+Can also try this view with bars, after a bit of manipulation to longer data shape for ease of bar chart comparison:
+
+```{r crypto-pc-wk-bar-01, echo=TRUE}
+## pivot data longer to make it easier to display side-by-side bars with legend
+crypto_data_pc_wk_lg <- crypto_data_pc_wk %>% select(date, BTC_CAD_pc, ADA_CAD_pc) %>% 
+  pivot_longer(cols=c(BTC_CAD_pc, ADA_CAD_pc), names_to='currency', values_to = 'pc_chg')  
+## side-by-side bar plot
+crypto_data_pc_wk_lg %>% ggplot(aes(x=date, y=pc_chg, fill=currency))+
+  geom_col(position = position_dodge2())+
+  scale_y_continuous(labels=percent_format())+
+  labs(title='Weekly % Changes in Prices', x="", y='Daily % Chg')+
+  theme(legend.position = 'top', legend.title = element_blank())
+```
+
+Still some challenges with density of the chart, but highlights how bar/column charts can facilitate side-by-side comparisons, whereas line charts favour reading trends.
+
+Looking at the relative patterns, one direction this could lead us is to ask questions around center and distribution of daily changes in the two currencies:  
 
 ```{r}
-crypto_data_pc_lg <- crypto_data_pc %>% select(date, BTC_CAD_pc, ADA_CAD_pc) %>% 
-  pivot_longer(cols=c(BTC_CAD_pc, ADA_CAD_pc), names_to='currency', values_to = 'pc_chg') 
-crypto_data_pc_lg %>% ggplot(aes(x=date, y=pc_chg, fill=currency))+geom_col(position = position_dodge2())
+cat('BTC-CAD summary \n')
+summary(crypto_data_pc$BTC_CAD_pc)
+cat('std deviation: ',sd(crypto_data_pc$BTC_CAD_pc),'\n')
+cat('\nADA-CAD summary \n')
+summary(crypto_data_pc$ADA_CAD_pc)
+cat('std deviation: ',sd(crypto_data_pc$ADA_CAD_pc))
 ```
 
-* need either selected or aggregated time periods (time series)
+Both appear to be pretty tightly-centered around 0, with Cardano being a bit more volatile. This could lead us into some distribution visualizations like histogram with changes in the two currencies overlaid each other...
+
+```{r crypto-hist-01, echo=TRUE}
+crypto_data_pc %>% ggplot()+
+  geom_histogram(aes(x=BTC_CAD_pc), fill='goldenrod', alpha=0.2)+
+  geom_histogram(aes(x=ADA_CAD_pc), fill='blue', alpha=0.2)+
+  labs(title='Distribution of Daily % Chg, gold=BTC-CAD, blue=ADA-CAD', x='')
+```
+
+...or, personal preference, boxplot...
+
+```{r crypto-pc-box-01, echo=TRUE}
+## pivot data longer to make it easier to display side-by-side bars with legend
+crypto_data_pc_lg <- crypto_data_pc %>% select(date, BTC_CAD_pc, ADA_CAD_pc) %>% 
+  pivot_longer(cols=c(BTC_CAD_pc, ADA_CAD_pc), names_to='currency', values_to = 'pc_chg')
+## boxplot
+crypto_data_pc_lg %>% ggplot(aes(x=currency, y=pc_chg))+geom_boxplot(fill='dodgerblue')+
+  scale_y_continuous(labels=percent_format())+
+  labs(title='Distribution of Daily % Chg', x='', y='Daily % Chg')
+```
+
+### Re-Scale the Data
+
+Another option we have is to rescale both sets of prices so that they are on a common scale, and therefore more camparable. This is the kind of thing that is often done in machine learning in order to balance the weights of features.
+
+#### Two main approaches: Normalization and Standardization
+
+This is a whole area unto itself but there are two general approaches:
+
+* **Normalization**: scale the values from 0 - 1, using 'min-max scaling'. Doesn't treat outliers well.
+* **Standardization**: aka 'z-score': scale the values so that mean = 0 and standard deviation = 1. No upper or lower bound, so tends to be better at handling outliers.
+
+There general guidelines but no hard and fast rules around when to use one or the other, so let's check them both out.
+
+#### Normalization
+
+According to info on analyticsvidhya.com, considered '[good to use when you know that the distribution of your data does not follow a Gaussian distribution](https://www.analyticsvidhya.com/blog/2020/04/feature-scaling-machine-learning-normalization-standardization/)'. Let's check:
+
+```{r crypto-norm-check-01, echo=TRUE, fig.height=4}
+hist01 <- crypto_data %>% ggplot(aes(x=BTC_CAD))+geom_histogram()+
+  labs(title='BTC_CAD price distribution')
+hist02 <- crypto_data %>% ggplot(aes(x=ADA_CAD))+geom_histogram()+
+  labs(title='ADA_CAD price distribution')
+grid.arrange(hist01, hist02, nrow=1)
+```
+
+BTC for sure not Normal, ADA not looking very Normal either. So Normalization might be good option, especially since doesn't look like outliers are present.
+
+The formula for min-max normalization is pretty straightforward - basically yor each value in the data set you calculate the distance from the minimum value and then divide by the full range of data:
+
+Xeach = (X - Xmin) / (Xmax-Xmin)
+
+For fun, we can use the caret pkg, based on example code from [JournalDev.com](https://www.journaldev.com/47850/normalize-data-in-r):
+
+```{r, echo=TRUE}
+## use caret pkg functions for fun
+library(caret)
+process <- preProcess(crypto_data, method=c('range'))
+crypto_norm <- predict(process, crypto_data)
+```
+
+Create plot for display later:
+
+```{r crypto-norm-01, echo=TRUE}
+## create a plot of normalized lines
+p_norm <- crypto_norm %>% ggplot(aes(x=date))+
+  geom_line(aes(y=BTC_CAD), color='goldenrod')+
+  geom_line(aes(y=ADA_CAD), color='blue')+
+  labs(title='Nrmlized Prices (gold=BTC, blue=ADA)', x='', y='normalized prices')
+```
+
+#### Standardization
+
+* more suited to outliers
+* use the built-in 'scale' function in R
+
+```{r, echo=TRUE}
+## z-score scaling
+crypto_scale <- as.data.frame(scale(crypto_data[2:3]))
+crypto_scale <- crypto_scale %>% rename(
+  BTC_CAD_scale=BTC_CAD,
+  ADA_CAD_scale=ADA_CAD
+)
+## bind the values back to original data set, with dates
+crypto_scale <- bind_cols(crypto_data, crypto_scale)
+```
+
+Create plot:
+
+```{r crypto-std-01, echo=TRUE}
+p_std <- crypto_scale %>% ggplot(aes(x=date))+
+  geom_line(aes(y=BTC_CAD_scale), color='goldenrod')+
+  geom_line(aes(y=ADA_CAD_scale), color='blue')+
+  labs(title='Stdized Prices (gold=BTC, blue=ADA)', x='', y='standardized prices')
+```
+
+Compare the two methods:
+
+```{r crypto-norm-std-01, fig.height=5}
+grid.arrange(p_norm, p_std, nrow=1)
+```
+
+Very similar results, although interesting to see how the Standardized view on the right has a bit more spread for ADA relative to BTC, as values are not constrained between upper and lower bound. This may be a more accurate reflection of the higher volatility of ADA.
+
+#### Percentile comparisons
+
+Data can also be scaled using percentiles, resulting in a scale between 0 and 100, based on the ranking of each value. A less common approach and I don't believe recommended for machine learning features, but could have application for comparisons as alternative to dual axis charts. 
+
+The tidyverse has a handy 'percent_rank' function for easy calculation.
+
+```{r, echo=TRUE}
+crypto_data_pctl <- crypto_data %>% mutate(
+  BTC_CAD_pctl=percent_rank(BTC_CAD),
+  ADA_CAD_pctl=percent_rank(ADA_CAD)
+)
+
+p_pctl <- crypto_data_pctl %>% ggplot(aes(x=date))+
+  geom_line(aes(y=BTC_CAD_pctl), color='goldenrod')+
+  geom_line(aes(y=ADA_CAD_pctl), color='blue')+
+  scale_y_continuous(labels=percent_format())+
+  labs(title='Prcntile Prices (gold=BTC, blue=ADA)', x='', y='percentile rank')
+p_pctl
+```
+
+Also appears quite usable although does seem to diverge from the other two approaches. Compare all three methods:
+
+```{r crypto-all-norm-01, fig.height=4}
+p_norm <- p_norm+labs(title='Normalized (gld=BTC, blu=ADA')
+p_std <- p_norm+labs(title='Standardized')
+p_pctl <- p_pctl+labs(title='Percentiles')
+grid.arrange(p_norm, p_std, p_pctl, nrow=1)
+```
+
+The percentile version stands out as having different relative patterns compared to the other two. Possibly because by definition data points for each of the currencies will include all the same percentile values (0 to 100 in increments of n/100 where n=number of rows in the data). The only difference in the two will be the order in which the values occur in time, by date. So the percentile approach is one to avoid if the relative amount, and not just rank position, matters.
+
+## Scenario 2: Comparing a Count and a Ratio
+
+In other cases, we may want to compare patterns in a volume or count metric with a related key indicator. Here's an example using some Google Analytics data for a website:
+
+* daily users
+* daily conversion rate
+
+Interesting questions with these metrics can inlude:
+
+* what is the relationship between patterns in site traffic and conversion rates?
+* do increases in daily users correspond to decreases in conversion rates or vice versa?
+* are there any points where breaking of the typical relationship between these metrics warrants further investigation?
+
+Quick look at the data:
+
+```{r}
+## import data
+ga4 <- read_csv(here('dual-axis','input','GA4-export.csv'))
+#ga_data <- ga4 %>% select(date, users, conv_rate)
+ga_data <- ga4 %>% select(date, users, conv_rate) %>% 
+  mutate(
+    date=mdy(date),
+    conv_rate=str_remove(conv_rate, "%"),
+    conv_rate=as.numeric(conv_rate)/10
+  )
+
+## get random sample of row numbers
+smpl <- sample(1:nrow(ga_data), 6, replace = FALSE)
+## generate table of random rows, by date; 'float_left' allows tables to be side-by-side
+ga_data[smpl,] %>% arrange(date) %>% kable %>% kable_styling(full_width = FALSE, position='float_left')
+## show summary of data
+summary(ga_data) %>% kable %>% kable_styling(full_width = FALSE, position='left')
+```
 
 ### Statistical methods of comparison
 
 correlation / linear regression on price
 distribution of price chg
 
-```{r}
-crypto_data_pc_lg %>% ggplot(aes(x=currency, y=pc_chg))+geom_boxplot(color='blue')
-```
+
 
 
 ## Notes: alternatives to Dual-Axis

@@ -65,17 +65,20 @@ Most charting tools allow for the creation of dual-axis charts. Most relevant fo
  
 [ggplot2 dual-y-axis reference](https://www.r-graph-gallery.com/line-chart-dual-Y-axis-ggplot2.html)
 
-### Scenario 1: Compare trends in similar metrics from two datasets
+## Scenario 1: Compare trends in similar metrics from two datasets
 
-Suppose we are interested in crypto currencies and are curious about how a crypto currency like Cardano, with its token ADA compares against Bitcoin (BTC). Our first thought my be to compare prices over a recent period, to answer questions like:
+Suppose we are interested in crypto currencies and are curious about how a crypto currency like Cardano, with its token ADA compares against Bitcoin (BTC). 
+
+As always, the visualization choice should be based on **what questions we are trying to answer**, **what we are hoping to learn**, and, ultimately **what decisions we want to make**. 
+
+If we don't have a specific objective beyond curiousity and want to start with general exploration, we still need to frame up our exploration. Our first thought may be to compare prices over a recent period, to answer questions like:
 
 * What are the relative changes in the currencies over time?
 * Do the two follow a similar pattern of ups and downs?
 * Are there any points where a general pattern breaks? (could provide focus for further investigation)
+* Eventually: are there ways we can take advantage of these patterns to make investment decisions? (probably beyond initial scope but helps to have that broader perspective) 
 
-As always, the visualization choice should be based on **what questions we are trying to answer** and **what we are hoping to learn**. 
-
-So we gather some price data (Cdn$). Here is a random sample of rows, along with summary data. We can see the two sets of prices are on much different scales!
+So we gather some price data (Cdn$). Here is a random sample of rows, along with summary data. We can see the two sets of prices are on much different scales.
 
 ```{r}
 ## get random sample of row numbers
@@ -86,7 +89,7 @@ crypto_data[smpl,] %>% arrange(date) %>% kable %>% kable_styling(full_width = FA
 summary(crypto_data) %>% kable %>% kable_styling(full_width = FALSE, position='left')
 ```
 
-#### Basic line chart
+### Basic line chart
 
 This is confirmed in a basic line chart produced in ggplot2: (click into code block and scroll/drag horizontally)
 
@@ -95,7 +98,7 @@ crypto_data %>% ggplot(aes(x=date))+geom_line(aes(y=BTC_CAD), color='gold')+
   geom_line(aes(y=ADA_CAD), color='blue')
 ```
 
-#### Dual-axis option
+### Dual-axis option
 
 A common approach, then, is to use dual y-axis, with different scales on each, to enable visibility of the data side by side. This can be a trap if not managed carefully, though. There are two key questions to ask:
 
@@ -110,7 +113,7 @@ include_graphics(here('dual-axis','images','btc-vs-cad-gsheets.png'))
 
 Which, for this data, looks to be not bad. It shows a relatively close relationship in trends and some points, divergence at others. Maybe cardano is more volatile, prone to relatively higher peaks and lower troughs?
 
-#### Relative Scales Matter
+### Relative Scales Matter
 
 The above Google sheets chart is based on an automatically-selected ratio of 25000:1 in the two axes. This automatic selection may be suitable in some cases, but not necessarily all. 
 
@@ -227,7 +230,7 @@ crypto_data %>% ggplot(aes(x=date)) +
   )+labs(title=ch_title, x="")
 ```
 
-### Scenario 2: Comparing a Count and a Ratio
+## Scenario 2: Comparing a Count and a Ratio
 
 In other cases, we may want to compare patterns in a volume or count metric with a related key indicator. Here's an example using some Google Analytics data for a website:
 
@@ -261,6 +264,7 @@ ga_data[smpl,] %>% arrange(date) %>% kable %>% kable_styling(full_width = FALSE,
 summary(ga_data) %>% kable %>% kable_styling(full_width = FALSE, position='left')
 ```
 
+### Dual-axis Lines
 
 ```{r da-plot-ga-1, echo=TRUE}
 transfm <- median(ga_data$users)/median(ga_data$conv_rate)
@@ -287,6 +291,8 @@ ga_data %>% ggplot(aes(x=date)) +
 ```
 
 Looks pretty messy but there does seem to be some degree of opposite movement in these two metrics. There is also the precipitous drop in conversion rate at the start of the period that is probably worth looking into, especially since there is little change in volume of users at that point.
+
+### Dual-axis with Bar Chart
 
 When working with two different types of metrics, a variation on the line charts that can help to bring out the message within the data is to combine bar chart and line chart.
 
@@ -321,8 +327,6 @@ ga_data %>% ggplot(aes(x=date)) +
 ```
 
 It does seem easier to untangle the relationship using the bar and line combination, along with the even 10M:1 ratio. Still, though, we are left with the same challenge, initially at least, of wrapping our heads around what is going on here, which axis is which, what the relative values are.
-
-
 
 ## Tips
 
