@@ -343,12 +343,40 @@ ga_data[smpl,] %>% arrange(date) %>% kable %>% kable_styling(full_width = FALSE,
 summary(ga_data) %>% kable %>% kable_styling(full_width = FALSE, position='left')
 ```
 
-### Statistical methods of comparison
+Approaches shown above can be applied to this data as well. So we'll focus on some further alternatives particularly well-suited to this type of data.
 
-correlation / linear regression on price
-distribution of price chg
+### Line chart with Bar chart below
 
+We saw above how line charts stocked above and below can be easier to interpret that dual-axis charts. In the previous blog post, there was an example of how a dual-axis chart can be improved by combining a line chart for a percentage/ratio metric with a bar chart for a volume metric. We can take from each of these examples and set up a line chart with a bar chart below it - similar to the typical way stock market charts display price data with volume data underneath.
 
+```{r}
+gline_01 <- ga_data %>% ggplot(aes(x=date, y=conv_rate))+geom_line()+
+  theme(axis.text.x=element_blank())+
+  labs(title='Conversion Rate with User Counts Below for Reference', x='')
+gbar_01 <- ga_data %>% ggplot(aes(x=date, y=users))+geom_col()+
+  labs(x='')
+
+plot_grid(gline_01, gbar_01, nrow=2, align='v', rel_heights = c(3,1))
+```
+
+Here we're abandoning any attempt to align the scales in favour of considering the metrics separately but within the same context of time frame. This also frees us up to adjust the height ratio of the charts in order to focus on the key metric of interest.
+
+### Fintech
+
+```{r}
+library(xts)
+ga_data_ts01 <- read.zoo(ga_data)
+ga_data_ts <- ga_data %>% select(date, conv_rate, users) %>% rename(
+  GA.Close=conv_rate,
+  GA.Volume=users
+)
+ga_data_ts <- read.zoo(ga_data_ts) 
+#barChart(ga_data_ts)
+chartSeries(ga_data_ts, )
+#chartSeries(ga_data_ts, TA=c(addVo()))
+#library(dygraphs)
+dygraph(ga_data_ts01) %>% dyRangeSelector()
+```
 
 
 ## Notes: alternatives to Dual-Axis
