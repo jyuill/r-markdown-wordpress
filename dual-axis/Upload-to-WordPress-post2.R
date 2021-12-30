@@ -13,21 +13,21 @@ library(here)
 ## -- FOLDER: specify folder that blog post is in
 blogfldr <- "dual-axis"
 ## -- RMARKDOWN file to publish
-blogfile <- paste0(blogfldr,"/Dual-Axis-Temptation.Rmd")
+blogfile <- paste0(blogfldr,"/Dual-Axis-Alternatives.Rmd")
 ## -- BLOG TITLE
-blogtitle <- "Dual-Axis Charts: Temptations, Traps, Tips"
+blogtitle <- "Dual-Axis Charts: Better Alternatives"
 ## --  PUBLISH or DRAFT?
 pub <- FALSE ## TRUE to publish; FALSE for draft
 ## -- NEW OR EDIT? 
 blogaction <- "editPost" ## "newPost", "editPost", "newPage"
 ## -- ID: needed for EDIT -> will determine which version of knit2wp function to run
-blogpostid <- "1255" ## needed with editPost - can get from WP interface, click on post to edit, check URL
+blogpostid <- "1312" ## needed with editPost - can get from WP interface, click on post to edit, check URL
 ## -- CATEGORY - needs to be added previously in WP
 ## commonly used:
 ## - R Stats, R Markdown, Analytics Management, Data Presentation, Data Visualization, Web Analytics, Google Analytics, Google, SEM
 blogcat <- c('R Stats', 'R Markdown', 'Data Visualization')
 ## -- THUMBNAIL: specific plot; plots are stored in the top-level 'figure' folder
-blogthumbnail <- paste0(blogfldr,"/images/btc-ada-thumbnail.png") 
+blogthumbnail <- paste0(blogfldr,"/images/btc-ada-pc-chg-bars.png") 
 ##############################################################################
 
 ## CREDENTIALS: set up initial credentials & values needed

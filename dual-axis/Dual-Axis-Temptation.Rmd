@@ -28,6 +28,10 @@ library(kableExtra)
 theme_set(theme_minimal())
 ```
 
+```{r}
+include_graphics(here('dual-axis','images','btc-ada-thumbnail.png'))
+```
+
 ## The Temptation of Dual-Axis Charts
 
 Sometimes when we are trying to show relationships over time between two dimensions of the same metric, or two separate metrics, we run into a situation where differences in the scales involved make it difficult/impossible to really tell what is going on using a standard line chart. One solution we may be tempted to turn to: a **dual-y-axis** chart, with an axis on the left for the scale that fits one dimension or metric, and a separate scale on the right that fits the other dimension or metric.
@@ -43,9 +47,9 @@ The general idea here is that dual-axis charts should be avoided if possible, be
 
 ### What the Experts Say: Avoid
 
-Data visualization experts generally recommend against the use of dual-axis charts, for similar reasons cited above (and sometimes more). For example, in the book ('Better Data Visualizations'*)[https://amzn.to/3pyJxGe] by Jonathan Schwabish, he has a section called 'Avoid Dual-Axis Line Charts' that covers similar territory to what is discussed here. 
+Data visualization experts generally recommend against the use of dual-axis charts, for similar reasons cited above (and sometimes more). For example, in the book ['Better Data Visualizations'*](https://amzn.to/3pyJxGe) by Jonathan Schwabish, he has a section called **'Avoid Dual-Axis Line Charts'** that covers similar territory to what is discussed here. 
 
-(* affiliate link for a book I wholeheartedly recommend for any data viz professional)
+*(* affiliate link for a book I wholeheartedly recommend for any data viz professional)*
 
 With that baseline-setting, let's dig into some scenarios and examples to make the point more clearly. As usual, the examples here are produced using R, with ggplot2 package as the preferred visualization tool.
 
@@ -53,8 +57,8 @@ With that baseline-setting, let's dig into some scenarios and examples to make t
 
 There are two common scenarios where dual-axis charts become tempting:
 
-1. Comparing trends in two (or more) similar data sets that have vastly different scales.
-2. Comparing a volume metric with a related rate or ratio metric. (so, again, vastly different scales)
+1. Comparing trends in two data sets that have **vastly different scales**.
+2. Comparing a **volume metric** with a related **rate or ratio metric**. (so, again, vastly different scales)
 
 ```{r}
 ## import crypto data
@@ -84,9 +88,11 @@ So we gather some price data (Cdn$). Here is a random sample of rows, along with
 ## get random sample of row numbers
 smpl <- sample(1:nrow(crypto_data), 6, replace = FALSE)
 ## generate table of random rows, by date; 'float_left' allows tables to be side-by-side
-crypto_data[smpl,] %>% arrange(date) %>% kable %>% kable_styling(full_width = FALSE, position='float_left')
+#crypto_data[smpl,] %>% arrange(date) %>% kable %>% kable_styling(full_width = FALSE, position='float_left')
 ## show summary of data
-summary(crypto_data) %>% kable %>% kable_styling(full_width = FALSE, position='left')
+#summary(crypto_data) %>% kable %>% kable_styling(full_width = FALSE, position='left')
+## keeping it simple
+crypto_data[smpl,] %>% arrange(date) %>% kable %>% kable_styling(full_width = FALSE, position='center')
 ```
 
 ### Basic line chart
@@ -98,11 +104,13 @@ crypto_data %>% ggplot(aes(x=date))+geom_line(aes(y=BTC_CAD), color='gold')+
   geom_line(aes(y=ADA_CAD), color='blue')
 ```
 
+This shows us the pattern in Bitcoin prices but due to difference in scales, doesn't help much with any of our questions around comparing patterns between the two currencies. 
+
 ### Dual-axis option
 
 A common approach, then, is to use dual y-axis, with different scales on each, to enable visibility of the data side by side. This can be a trap if not managed carefully, though. There are two key questions to ask:
 
-**1. what should the range of the second axis be?**
+**1. what should the range of the second axis be?**<br />
 2. How to make it as easy as possible for user to interpret, without having to wrap their heads around lining up different data with different axes.
 
 Depending on your tool of choice, you may have a variety of options. For example, default two-axis chart in Google Sheets looks like this:
@@ -111,7 +119,13 @@ Depending on your tool of choice, you may have a variety of options. For example
 include_graphics(here('dual-axis','images','btc-vs-cad-gsheets.png'))
 ```
 
-Which, for this data, looks to be not bad. It shows a relatively close relationship in trends and some points, divergence at others. Maybe cardano is more volatile, prone to relatively higher peaks and lower troughs?
+It takes a bit to get oriented and in this case depends on your knowledge that BTC has much higher prices, so must be the left axis, and ADA is on the right axis. (this could be handled with better axis labelling)
+
+The thing I notice here is that once I get settled that the blue line is Bitcoin, I can easily line up the start against 40,000 or so and as I follow the trend over time and get near the end, my eye gravitates toward the closer axis on the right - just under 3. Then I realize that doesn't make sense and I switch back to the left axis for reference. So my brain is spinning a bit. Similarly with the red ADA line, where my tendency at the start of the period is to associate it with the left axis, then adjusting to look all the way over to the right axis and continue from there.
+
+Once we get through that, the dual-axis does provide a way to view the two data sets alongside each other with much more granularity than the previous chart. In terms of the patterns we are looking to discover, it shows a relatively close relationship in trends and some points, divergence at others. Both have trended up over time. Maybe Cardano is more volatile, prone to relatively higher peaks and lower troughs?
+
+Before we go too far with our conclusions, though, there are some further subtleties that we should be aware of.
 
 ### Relative Scales Matter
 
@@ -196,7 +210,7 @@ cd4 <- crypto_data %>% ggplot(aes(x=date)) +
 grid.arrange(cd1, cd2, cd3, cd4, nrow=2)
 ```
 
-*Note: GOLD line = Bitcoin, BLUE line = ADA. The charts are simplified for this demo; in a more formal presentation, the data-axis match would be made more clear on the charts themselves.*
+*Note*: **GOLD line = Bitcoin, BLUE line = ADA**. *The charts are simplified for this demo; in a more formal presentation, the data-axis match would be made more clear on the charts themselves.*
 
 In terms of relative scales, the smaller the ratio used, the more the secondary axis is stretched out. The result:
 
@@ -205,30 +219,42 @@ In terms of relative scales, the smaller the ratio used, the more the secondary 
 * **lower-left**: 25000:1 ratio as the Google sheets example.
 * **lower-right**: by the time we get here, we have flipped the story to where ADA (blue) looks like the volatile one, soaring to great heights and then crashing back down, while BTC (gold) is relatively quiet.
 
-I'm not sure there is a clear/correct/easy answer here. I think it is just a hazard that comes with these charts, something to watch out for when data is presented this way, and a reason to be wary of using dual-axis charts.
+I'm not sure there is a clear/correct/easy answer here. It is just a hazard that comes with these charts, something to watch out for when data is presented this way, and a reason to be wary of using dual-axis charts.
+
+The bottom line is that the answers to our questions may vary with the ratio between the two scales, may lead us to different conclusions, may cause us to take or recommend different actions depending on which view we are looking at, even though it is the *same* data.
+
+#### Ratio by Calculation
 
 As far as finding a fair/reasonable transformation value, one way to go about it may be to calculate an overall ratio of the two datasets. For example, rather than picking a number:
 
 ```{r, echo=TRUE}
 transfm <- median(crypto_data$BTC_CAD)/median(crypto_data$ADA_CAD)
-#transfm
 ```
 
 Median BTC vs ADA is `r transfm` so this could be useful for transformation, at least as starting point. You could 1) use this directly, as below, or 2) use it to guide you toward a nearby number that is a nice, round number to work with. For example, a reasonably close multiple in this case is **10,000** (chart in the top-right of the 4 charts above). This is much easier for a person to relate to when comparing the two axes, making it slightly less daunting. 
 
-```{r da-plot-crypto-scale-calc}
+```{r da-plot-crypto-scale-calc, echo=TRUE}
 ch_title <- paste0('BTC vs ADA (scale ratio: ', transfm,')')
 crypto_data %>% ggplot(aes(x=date)) +
   geom_line(aes(y=BTC_CAD), color=col_left)+
   geom_line(aes(y=ADA_CAD*transfm), color=col_right)+
-  # Custom the Y scales:
+  annotate("text", x=date('2021-02-20'), y=75000, label='BTC', color='goldenrod', size=6)+
+  annotate('text', x=date('2021-05-26'), y=100000, label='ADA', color='blue', size=6)+
+  # Customize the Y scales:
   scale_y_continuous(
+    labels=dollar_format(),
     # Features of the first axis
     name = "BTC",
     # Add a second axis and specify its features
     sec.axis = sec_axis(~./transfm, name="ADA")
   )+labs(title=ch_title, x="")
 ```
+
+### Conclusion - Scenario 1
+
+The takeaway for me here is confirmation of the 'best practice' warnings to avoid the tempatation of dual-axis charts: both because of how the story in the data can be manipulated and for the mental gymnastics required to parse out what that story is. 
+
+Let's see if this conclusion holds up for another scenario...
 
 ## Scenario 2: Comparing a Count and a Ratio
 
@@ -237,7 +263,7 @@ In other cases, we may want to compare patterns in a volume or count metric with
 * daily users
 * daily conversion rate
 
-Interesting questions with these metrics can inlude:
+Interesting questions with these metrics can include:
 
 * what is the relationship between patterns in site traffic and conversion rates?
 * do increases in daily users correspond to decreases in conversion rates or vice versa?
@@ -261,8 +287,10 @@ smpl <- sample(1:nrow(ga_data), 6, replace = FALSE)
 ## generate table of random rows, by date; 'float_left' allows tables to be side-by-side
 ga_data[smpl,] %>% arrange(date) %>% kable %>% kable_styling(full_width = FALSE, position='float_left')
 ## show summary of data
-summary(ga_data) %>% kable %>% kable_styling(full_width = FALSE, position='left')
+#summary(ga_data) %>% kable %>% kable_styling(full_width = FALSE, position='left')
 ```
+
+Again, very different scales - no surprise there. 
 
 ### Dual-axis Lines
 
@@ -326,17 +354,23 @@ ga_data %>% ggplot(aes(x=date)) +
 
 ```
 
-It does seem easier to untangle the relationship using the bar and line combination, along with the even 10M:1 ratio. Still, though, we are left with the same challenge, initially at least, of wrapping our heads around what is going on here, which axis is which, what the relative values are.
+It does seem somewhat easier to untangle the relationship using the bar and line combination, along with the even 10M:1 ratio. From this view, it looks like there is no consistent pattern in the trends between the two metrics, with conversion rate sometimes rising with user count increases, sometimes dropping. So that provides us with some answers to our initial questions about the relationship.
+
+We are still left with the same challenge, initially at least, of wrapping our heads around what is going on here, which axis is which, what the relative values are.
+
+### Conclusion - Scenario 2
+
+This second scenario confirms that even for a different use case, dual-axis charts are problematic. The competing scales are an issue and switch to a combo of bar and line may help, but doesn't remove all the problems.
 
 ## Tips
 
 As the above examples highlight, if you are unable to resist the temptation to display your data in a dual-axis chart there are some things to do in order to make it as easy as possible for users to extract meaning: 
 
 * make sure both axes are carefully and clearly labelled, with color or other signals to associate the axis to the respective data.
-* in some cases, label lines directly to indicate which is which can be helpful.
-* consider mixing bars (vol) and lines (ratios).
+* consider mixing bars (vol) and lines (ratios), although don't rely on this to solve the major problems.
 * be responsible: don't contort scales to fit your pre-defined message or beliefs or hopes or other biases.
 * make second axis a factor of 10 ratio if feasible, since it is easy for people to translate between the two scales.
+* for full transparency, disclose the ratio between the two scales that is being used.
 
 ## Alternatives to the Double-Axis
 

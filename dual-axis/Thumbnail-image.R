@@ -2,23 +2,26 @@
 
 library(tidyverse)
 library(scales)
+library(here)
 
 ## get data
-## import crypto data
-crypto_data <- read_csv(here('dual-axis','input','btc-ada-price.csv'))
+## uses data frame created during Dual-Axis-Alternatives.Rmd
 
-## create chart then top menu: Plots > Save as image
-transfm <- median(crypto_data$BTC_CAD)/median(crypto_data$ADA_CAD)
-col_left <- 'darkgoldenrod3'
-col_right <- 'blue'
-ch_title <- paste0('BTC vs ADA')
-crypto_data %>% ggplot(aes(x=date)) +
-  geom_line(aes(y=BTC_CAD), color=col_left)+
-  geom_line(aes(y=ADA_CAD*transfm), color=col_right)+
-  # Custom the Y scales:
-  scale_y_continuous(
-    # Features of the first axis
-    name = "", labels=dollar_format(),
-    # Add a second axis and specify its features
-    sec.axis = sec_axis(~./transfm, name="")
-  )+labs(title=ch_title, x="")
+## set filename and path for saving
+fname <- 'btc-ada-pc-chg-bars.png'
+pname <- here('dual-axis','images')
+  
+## create chart - ggsave will save
+## side-by-side bar plot
+crypto_data_pc_wk_lg %>% ggplot(aes(x=date, y=pc_chg, fill=currency))+
+  geom_col(position = position_dodge2())+
+  geom_hline(yintercept=0, size=0.5, color='gray')+
+  scale_y_continuous(labels=percent_format())+
+  labs(x="", y='')+
+  theme(legend.position = 'none',
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.line.y = element_line(size=0.5, color='gray'),
+        axis.ticks.y = element_line(color='gray'))
+## SAVE plot at desired size and location
+ggsave(filename=fname, path=pname, scale=1, height=1.5, width=8)

@@ -30,9 +30,13 @@ library(caret) ## used for normalization of the data
 theme_set(theme_minimal())
 ```
 
+```{r}
+include_graphics(here('dual-axis','images','btc-ada-pc-chg-bars.png'))
+```
+
 ## Alternatives to Dual-Axis Charts
 
-In a previous blog post, I went through temptations and traps of **dual-axis** charts. These are charts where you want to compare two metrics or data attributes but there are vastly different scales involved, so you reach for a layout with two y-axes in order to deal with the scales separately. I acknowledged this is a tempting choice, but fraught with danger due to at least a couple of common issues:
+In a previous blog post called ['Dual-Axis Charts: Temptations, Traps, Tips'](https://catbirdanalytics.wordpress.com/2021/12/29/dual-axis-charts-temptations-traps-tips/), I went through some of the pitfalls of using **dual-axis** charts. These are charts where you want to compare two metrics or data attributes but there are vastly different scales involved, so you reach for a layout with two y-axes in order to deal with the scales separately. I acknowledged this as a tempting choice, but fraught with danger due to at least a couple of common issues:
 
 1. **Misrepresentation due to mixed scales**: changing relative scales arbitrarily can suggest different conclusions and imply relationships that may not be as strong (or weak) as they appear.
 2. **Difficultly in interpretation**: these charts require extra mental effort to untangle the lines and associate them with their respective data points.
@@ -70,11 +74,9 @@ In this random sample of recent data (Cdn$), we can see the two sets of prices a
 
 ```{r}
 ## get random sample of row numbers
-smpl <- sample(1:nrow(crypto_data), 6, replace = FALSE)
+smpl <- sample(1:nrow(crypto_data), 4, replace = FALSE)
 ## generate table of random rows, by date; 'float_left' allows tables to be side-by-side
-crypto_data[smpl,] %>% arrange(date) %>% kable %>% kable_styling(full_width = FALSE, position='float_left')
-## show summary of data
-summary(crypto_data) %>% kable %>% kable_styling(full_width = FALSE, position='left')
+crypto_data[smpl,] %>% arrange(date) %>% kable %>% kable_styling(full_width = FALSE, position='center')
 ```
 
 ### Line charts stacked vertically
@@ -213,10 +215,18 @@ There general guidelines but no hard and fast rules around when to use one or th
 According to info on analyticsvidhya.com, considered '[good to use when you know that the distribution of your data does not follow a Gaussian distribution](https://www.analyticsvidhya.com/blog/2020/04/feature-scaling-machine-learning-normalization-standardization/)'. Let's check:
 
 ```{r crypto-norm-check-01, echo=TRUE, fig.height=4}
-hist01 <- crypto_data %>% ggplot(aes(x=BTC_CAD))+geom_histogram()+
+## use density function to compare actual vs normal ideal
+## BTC
+hist01 <- crypto_data %>% ggplot(aes(x=BTC_CAD))+geom_histogram(aes(y=..density..))+
+  ## function to calculate ideal normal dist based on mean and sd in the dataset 
+  stat_function(fun=dnorm, args=list(mean=mean(crypto_data$BTC_CAD), sd=sd(crypto_data$BTC_CAD)), color='red')+
   labs(title='BTC_CAD price distribution')
-hist02 <- crypto_data %>% ggplot(aes(x=ADA_CAD))+geom_histogram()+
+## ADA
+hist02 <- crypto_data %>% ggplot(aes(x=ADA_CAD))+geom_histogram(aes(y=..density..))+
+  ## function to calculate ideal normal dist based on mean and sd in the dataset
+  stat_function(fun=dnorm, args=list(mean=mean(crypto_data$ADA_CAD), sd=sd(crypto_data$ADA_CAD)), color='red')+
   labs(title='ADA_CAD price distribution')
+## print both
 grid.arrange(hist01, hist02, nrow=1)
 ```
 
@@ -278,6 +288,16 @@ grid.arrange(p_norm, p_std, nrow=1)
 
 Very similar results, although interesting to see how the Standardized view on the right has a bit more spread for ADA relative to BTC, as values are not constrained between upper and lower bound. This may be a more accurate reflection of the higher volatility of ADA.
 
+So if we focus on the Standardized version, what can we learn from this view, relative to the questions we want to answer? A few things to unpack so let me make take a stab at it:
+
+* we see the overall upward trend in both data sets, with peaks and valleys along the way, at different points for each currency
+* lots of volatility in each data set, with a bit relative volatility in ADA: including higher peaks and lower lows.
+* ADA was slower off the mark than BTC at the beginning of the year, peaked a bit after, trended down in concert with BTC and then took off, before falling more consistently and harder than BTC at the end of the year.
+
+Now, with dual-axis charts like the [companion versions in the previous post](https://catbirdanalytics.wordpress.com/2021/12/29/dual-axis-charts-temptations-traps-tips/), we can draw similar conclusions, depending on how we configure the two axes - which is the *crux* of the problem. The point is this: 
+
+**with a standardized comparison, we can make these conclusions with more confidence.**  
+
 #### Percentile comparisons
 
 Data can also be scaled using percentiles, resulting in a scale between 0 and 100, based on the ranking of each value. A less common approach and I don't believe recommended for machine learning features, but could have application for comparisons as alternative to dual axis charts. 
@@ -309,6 +329,10 @@ grid.arrange(p_norm, p_std, p_pctl, nrow=1)
 
 The percentile version stands out as having different relative patterns compared to the other two. Possibly because by definition data points for each of the currencies will include all the same percentile values (0 to 100 in increments of n/100 where n=number of rows in the data). The only difference in the two will be the order in which the values occur in time, by date. So the percentile approach is one to avoid if the relative amount, and not just rank position, matters.
 
+### Conclusion - Scenario 1
+
+There are some very viable alternatives to dual-axis charts when trying to answer questions about the relationships/trends between to metrics on wildly different scales. 
+
 ## Scenario 2: Comparing a Count and a Ratio
 
 In other cases, we may want to compare patterns in a volume or count metric with a related key indicator. Here's an example using some Google Analytics data for a website:
@@ -336,11 +360,9 @@ ga_data <- ga4 %>% select(date, users, conv_rate) %>%
   )
 
 ## get random sample of row numbers
-smpl <- sample(1:nrow(ga_data), 6, replace = FALSE)
+smpl <- sample(1:nrow(ga_data), 4, replace = FALSE)
 ## generate table of random rows, by date; 'float_left' allows tables to be side-by-side
-ga_data[smpl,] %>% arrange(date) %>% kable %>% kable_styling(full_width = FALSE, position='float_left')
-## show summary of data
-summary(ga_data) %>% kable %>% kable_styling(full_width = FALSE, position='left')
+ga_data[smpl,] %>% arrange(date) %>% kable %>% kable_styling(full_width = FALSE, position='center')
 ```
 
 Approaches shown above can be applied to this data as well. So we'll focus on some further alternatives particularly well-suited to this type of data.
@@ -351,50 +373,33 @@ We saw above how line charts stocked above and below can be easier to interpret 
 
 ```{r}
 gline_01 <- ga_data %>% ggplot(aes(x=date, y=conv_rate))+geom_line()+
+  geom_point(size=2)+
+  geom_smooth(method='lm')+
   theme(axis.text.x=element_blank())+
-  labs(title='Conversion Rate with User Counts Below for Reference', x='')
+  labs(title='Conversion Rate with User Counts Below for Reference', x='', y='Conversion Rate %')
 gbar_01 <- ga_data %>% ggplot(aes(x=date, y=users))+geom_col()+
-  labs(x='')
+  labs(x='', y='Users')
 
 plot_grid(gline_01, gbar_01, nrow=2, align='v', rel_heights = c(3,1))
 ```
 
-Here we're abandoning any attempt to align the scales in favour of considering the metrics separately but within the same context of time frame. This also frees us up to adjust the height ratio of the charts in order to focus on the key metric of interest.
+Here we're abandoning any attempt to align the scales in favour of considering the metrics separately but within the same context of time frame. This also:
 
-### Fintech
+* frees us up to adjust the height ratio of the charts in order to focus on the key metric of interest. 
+* the separation reduces confusion over the scales, as there is less ambiguity.
+* allows us to add context like a trend (regression) line without creating the confusion and clutter that we would have on a dual-axis chart.
 
-```{r}
-library(xts)
-ga_data_ts01 <- read.zoo(ga_data)
-ga_data_ts <- ga_data %>% select(date, conv_rate, users) %>% rename(
-  GA.Close=conv_rate,
-  GA.Volume=users
-)
-ga_data_ts <- read.zoo(ga_data_ts) 
-#barChart(ga_data_ts)
-chartSeries(ga_data_ts, )
-#chartSeries(ga_data_ts, TA=c(addVo()))
-#library(dygraphs)
-dygraph(ga_data_ts01) %>% dyRangeSelector()
-```
+My view is that these changes make it easier and more intuitive to arrive at the same conclusions from the [previous blog post](https://catbirdanalytics.wordpress.com/2021/12/29/dual-axis-charts-temptations-traps-tips/): conversion rates rising and fall out-of-sync with variations in user counts.
+
+Again, this gets us quicker to follow-up questions and directed investigation, as well as enabling us to communicate what we are seeing in the data more clearly with others.
+
+### Conclusion - Scenario 2
+
+As with previous scenario, there are viable alternatives to comparing a volume metric with a rate or ratio metric, even though they are on very different scales. 
+
+## Overall Conclusion
+
+With these viable alternatives to dual-axis charts, there should be few cases where an analyst needs to succumb to the temptation of the dual-axis monster. The solutions offered here, or variations on them to fit your needs, will usually provide more clarity and better reveal the answers to your data questions.
 
 
-## Notes: alternatives to Dual-Axis
 
-* separate -> either side-by-side or above/below; especially if the focus is more on one than the other
-* % chg
-* normalize each dataset (center on zero)
-* volume and ratio: vol in bars smaller underneath (stock market style)
-* use along with other statistical measures
-
-tips:
-
-* make sure carefully labelled
-* in some cases, label lines directly
-* consider mixing bars (vol) and lines (ratios)
-* be responsible - don't contort to fit your pre-defined message or beliefs or hopes
-* make second axis a factor of 10 ratio
-* use bars with lines on ratio charts
-* combine with other statistics:
-  + correlation
-  + standard deviation (how to deal with non-normal? )
