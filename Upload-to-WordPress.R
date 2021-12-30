@@ -15,15 +15,17 @@ blogfldr <- "dual-axis"
 ## -- RMARKDOWN file to publish
 blogfile <- paste0(blogfldr,"/Dual-Axis-Temptation.Rmd")
 ## -- BLOG TITLE
-blogtitle <- "The Temptation of Dual-Axis Charts"
+blogtitle <- "Dual-Axis Charts: Temptations, Traps, Tips"
 ## --  PUBLISH or DRAFT?
 pub <- FALSE ## TRUE to publish; FALSE for draft
 ## -- NEW OR EDIT? 
-blogaction <- "newPost" ## "newPost", "editPost", "newPage"
-## -- ID: needed for EDIT -> need to **UNCOMMENT postid** in knit2wp function
-blogpostid <- "" ## needed with editPost - can get from WP interface, click on post to edit, check URL
+blogaction <- "editPost" ## "newPost", "editPost", "newPage"
+## -- ID: needed for EDIT -> will determine which version of knit2wp function to run
+blogpostid <- "1255" ## needed with editPost - can get from WP interface, click on post to edit, check URL
 ## -- CATEGORY - needs to be added previously in WP
-blogcat <- c('R Stats', 'R Markdown', 'Dataviz')
+## commonly used:
+## - R Stats, R Markdown, Analytics Management, Data Presentation, Data Visualization, Web Analytics, Google Analytics, Google, SEM
+blogcat <- c('R Stats', 'R Markdown', 'Data Visualization')
 ## -- THUMBNAIL: specific plot; plots are stored in the top-level 'figure' folder
 blogthumbnail <- paste0(blogfldr,"/images/btc-ada-thumbnail.png") 
 ##############################################################################
@@ -46,12 +48,25 @@ opts_knit$set(upload.fun = function(file){library(RWordPress);uploadFile(file)$u
 postThumbnail <- RWordPress::uploadFile(blogthumbnail,overwrite = TRUE)
 
 ## UPLOAD TO WORDPRESS - will create plot images in figure folder
-knit2wp(input=blogfile, 
-        title = blogtitle, 
-        publish = pub, ## FALSE for draft; TRUE to publish
-        action = blogaction, # "newPost" or "editPost"; also "newPage"
-        #postid=blogpostid, ## needed with editPost - get from WP interface
-        shortcode= FALSE, ## affects how source code is displayed; default is FALSE
-        categories=blogcat,
-        wp_post_thumbnail=postThumbnail$id)
+## - two versions depending on if NEW (first) or EDIT (second)
+if(blogpostid==""){
+        knit2wp(input=blogfile, 
+                title = blogtitle, 
+                publish = pub,
+                action = blogaction,
+                #postid=blogpostid, ## needed with editPost only
+                shortcode= FALSE, ## affects how source code is displayed; default is FALSE
+                categories=blogcat,
+                wp_post_thumbnail=postThumbnail$id)
+} else {
+        knit2wp(input=blogfile, 
+                title = blogtitle, 
+                publish = pub, 
+                action = blogaction, 
+                postid=blogpostid, ## needed with editPost - set above
+                shortcode= FALSE, ## affects how source code is displayed; default is FALSE
+                categories=blogcat,
+                wp_post_thumbnail=postThumbnail$id)
+}
+
 
