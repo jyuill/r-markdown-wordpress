@@ -9,7 +9,7 @@ My blogpost [Publish R Markdown to Wordpress? Yes you can!](https://catbirdanaly
 Key thing to note is that after your create your RMarkdown file, it is not simply a matter of knitting it, generating html output and then loading that html file into Wordpress. Rather, you use a separate pkg - RWordPress - to knit the Rmd file and publish it to WordPress as one process.
 
 1. **Produce your RMarkdown** file as blog post. Can be in this repository or any repository you like.
-2. **Copy RMarkdown** file to a new folder in this repo for the topic.\*
+2. **Copy RMarkdown** file to a new folder in this repo for the topic\* along with any **data or static image files** needed.
 3. **Copy the Upload-to-Wordpress.R** file into same folder.
 4. **Change the parameters** in the Upload-to-Wordpress-vX.R file to match your intentions. 
    - Key parameters are in the KEY VARIABLES section; usually they all must be changed.
