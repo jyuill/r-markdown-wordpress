@@ -199,16 +199,22 @@ crypto_data_pc_lg %>% ggplot(aes(x=currency, y=pc_chg))+geom_boxplot(fill='dodge
 
 ### Re-Scale the Data
 
-Another option we have is to rescale both sets of prices so that they are on a common scale, and therefore more camparable. This is the kind of thing that is often done in machine learning in order to balance the weights of features.
+Another option we have is to rescale both sets of prices so that they are on a common scale, and therefore more camparable. This is the kind of thing that is often done in machine learning in order to balance the weights of features. There are a number of potential pitfalls, so it is best to proceed with caution, understanding of your data, and objectives in mind. This info is presented as **demonstration, not necessarily endorsement**. ;)
 
 #### Two main approaches: Normalization and Standardization
 
-This is a whole area unto itself but there are two general approaches:
+This is a whole area unto itself and there are variations in the terminology used. I'm relying on the following references:
 
-* **Normalization**: scale the values from 0 - 1, using 'min-max scaling'. Doesn't treat outliers well.
-* **Standardization**: aka 'z-score': scale the values so that mean = 0 and standard deviation = 1. No upper or lower bound, so tends to be better at handling outliers.
+* [Feature Scaling for Machine Learning: Understanding the Differences between Normalization and Standardization (Analyticsvidyha.com)](https://www.analyticsvidhya.com/blog/2020/04/feature-scaling-machine-learning-normalization-standardization/)
+* [About Feature Scaling and Normalization (Sebastian Raschka)](https://sebastianraschka.com/Articles/2014_about_feature_scaling.html)
+* [Data Normalization with R (Nikhita Singh Shiv Kalpana on Medium)](https://medium.com/swlh/data-normalisation-with-r-6ef1d1947970)
 
-There general guidelines but no hard and fast rules around when to use one or the other, so let's check them both out.
+Based on the above, there are two general approaches, described as:
+
+* **Normalization**: scale the values from 0 - 1, using 'min-max scaling'. Doesn't treat outliers well. This is often described as maintaining the same distribution as original data, just shifting to different scale. However, it appears that will particularly volatile data, this is not always the case.
+* **Standardization**: aka 'z-score': scale the values so that mean = 0 and standard deviation = 1. No upper or lower bound, so tends to be better at handling outliers. Skews the data toward normal distribution.
+
+There are general guidelines but no hard and fast rules around when to use one or the other, so let's check them both out.
 
 #### Normalization
 
@@ -230,7 +236,7 @@ hist02 <- crypto_data %>% ggplot(aes(x=ADA_CAD))+geom_histogram(aes(y=..density.
 grid.arrange(hist01, hist02, nrow=1)
 ```
 
-BTC for sure not Normal, ADA not looking very Normal either. So Normalization might be good option, especially since doesn't look like outliers are present.
+This is pretty 'abnormal data' - *hello cryptocurrency!* - so another reason to exercise caution. 
 
 The formula for min-max normalization is pretty straightforward - basically yor each value in the data set you calculate the distance from the minimum value and then divide by the full range of data:
 
@@ -243,6 +249,18 @@ For fun, we can use the caret pkg, based on example code from [JournalDev.com](h
 library(caret)
 process <- preProcess(crypto_data, method=c('range'))
 crypto_norm <- predict(process, crypto_data)
+
+## alternative methods:
+## - mutate
+crypto_data_minmax <- crypto_data %>% mutate(
+  BTC_mm=(BTC_CAD-min(crypto_data$BTC_CAD))/(max(crypto_data$BTC_CAD)-min(crypto_data$BTC_CAD)),
+  ADA_mm=(ADA_CAD-min(crypto_data$ADA_CAD))/(max(crypto_data$ADA_CAD)-min(crypto_data$ADA_CAD))
+)
+## - simple function with lapply
+fminmax <- function(x){
+  (x-min(x))/(max(x)-min(x))
+  }
+crypto_data_fminmax <- as.data.frame(lapply(crypto_data[,2:3], fminmax))
 ```
 
 Create plot for display later:
@@ -255,9 +273,16 @@ p_norm <- crypto_norm %>% ggplot(aes(x=date))+
   labs(title='Nrmlized Prices (gold=BTC, blue=ADA)', x='', y='normalized prices')
 ```
 
+One thing to note is that contrary to info  [here](https://medium.com/@sjacks/feature-transformation-21282d1a3215) (for example), the distribution of the newly normalized data is similar but *not the same* as original data:
+
+```{r crypto-hist-btc-norm-01, fig.height=3}
+h1 <- crypto_data %>% ggplot(aes(x=BTC_CAD))+geom_histogram()
+h2 <- crypto_norm %>% rename(BTC_CAD_minmax=BTC_CAD) %>% ggplot(aes(x=BTC_CAD_minmax))+geom_histogram()
+grid.arrange(h1, h2, nrow=1)
+```
+
 #### Standardization
 
-* more suited to outliers
 * use the built-in 'scale' function in R
 
 ```{r, echo=TRUE}
@@ -271,7 +296,17 @@ crypto_scale <- crypto_scale %>% rename(
 crypto_scale <- bind_cols(crypto_data, crypto_scale)
 ```
 
-Create plot:
+Here we see again that the distributions are similar but not the same before/after. This is expected with standardization: distributions shift more toward normal curve.  
+
+```{r crypto-hist-std-01}
+par(mfrow=c(2,2))
+hist(crypto_scale$BTC_CAD)
+hist(crypto_scale$BTC_CAD_scale)
+hist(crypto_scale$ADA_CAD)
+hist(crypto_scale$ADA_CAD_scale)
+```
+
+Create line plot:
 
 ```{r crypto-std-01, echo=TRUE}
 p_std <- crypto_scale %>% ggplot(aes(x=date))+
@@ -300,11 +335,11 @@ Now, with dual-axis charts like the [companion versions in the previous post](ht
 
 #### Percentile comparisons
 
-Data can also be scaled using percentiles, resulting in a scale between 0 and 100, based on the ranking of each value. A less common approach and I don't believe recommended for machine learning features, but could have application for comparisons as alternative to dual axis charts. 
+Data can also be scaled using percentiles, resulting in a scale between 0 and 100, based on the ranking of each value. Doesn't seem to be a recommended for machine learning feature engineering, but could have application for comparisons as alternative to dual axis charts, where a more even comparison is wanted. 
 
 The tidyverse has a handy 'percent_rank' function for easy calculation.
 
-```{r, echo=TRUE}
+```{r crypto-pctl-lines-01, echo=TRUE}
 crypto_data_pctl <- crypto_data %>% mutate(
   BTC_CAD_pctl=percent_rank(BTC_CAD),
   ADA_CAD_pctl=percent_rank(ADA_CAD)
@@ -318,7 +353,7 @@ p_pctl <- crypto_data_pctl %>% ggplot(aes(x=date))+
 p_pctl
 ```
 
-Also appears quite usable although does seem to diverge from the other two approaches. Compare all three methods:
+Also appears potentially usable although does seem to diverge from the other two approaches. Compare all three methods:
 
 ```{r crypto-all-norm-01, fig.height=4}
 p_norm <- p_norm+labs(title='Normalized (gld=BTC, blu=ADA')
@@ -331,7 +366,7 @@ The percentile version stands out as having different relative patterns compared
 
 ### Conclusion - Scenario 1
 
-There are some very viable alternatives to dual-axis charts when trying to answer questions about the relationships/trends between to metrics on wildly different scales. 
+There are some viable alternatives to dual-axis charts when trying to answer questions about the relationships/trends between to metrics on wildly different scales. In particular, comparing percentage changes can provide insights without the hazards of dual-axis charts.
 
 ## Scenario 2: Comparing a Count and a Ratio
 
