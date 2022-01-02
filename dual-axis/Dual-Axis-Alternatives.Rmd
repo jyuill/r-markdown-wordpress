@@ -165,7 +165,28 @@ crypto_data_pc_wk_lg %>% ggplot(aes(x=date, y=pc_chg, fill=currency))+
 
 Still some challenges with density of the chart, but highlights how bar/column charts can facilitate side-by-side comparisons, whereas line charts favour reading trends.
 
-Looking at the relative patterns, one direction this could lead us is to ask questions around center and distribution of daily changes in the two currencies:  
+#### Difference in Difference
+
+Once we see the comparison of % change week-over-week, we might want to go further to compare the differences in those changes. We can take the next logical step and calculate the difference between the % change in ADA and % change in BTC - a version of the ['difference in difference'](https://en.wikipedia.org/wiki/Difference_in_differences#:~:text=Difference%20in%20differences%20(DID%20or,'%20versus%20a%20'control%20group') approach used in statistics.  
+
+```{r crypto_data_diff_in_diff-01, echo=TRUE}
+crypto_data_pc_wk <- crypto_data_pc_wk %>% mutate(
+  ADA_BTC_diff=ADA_CAD_pc-BTC_CAD_pc
+)
+crypto_data_pc_wk %>% ggplot(aes(x=date, y=ADA_BTC_diff*100))+geom_col()+
+  labs(title="Difference in % Difference: ADA-BTC", x="", y='Difference in Chg (percentage pts)')
+```
+
+This view highlights even further the lack of consistent relationship between changes in the two currencies: 
+
+* if the two had the same % changes (increase or decrease) week-over-week, the bars would be at/close to 0.
+* if there was a consistent difference in difference, for example, if a 10% change in BTC accompanied an 15% change in ADA, and 5% change in BTC accompanied a 10% in ADA, the bars would all be at 5.  
+
+Although the bars appear to be somewhat centered around 0 there is a LOT of variation on either side. Getting back to our original questions, there is no identifiable pattern in comparative price changes and not even apparent changes in the relationship over time or at different periods. 
+
+#### Center and Spread
+
+Looking at the relative patterns over time, one direction this could lead us is to ask questions around center and distribution of daily changes in the two currencies. This is going off on a tangent from the main goal of exploring alternatives to dual-axis time series charts, but I can't resist. ;)  
 
 ```{r}
 cat('BTC-CAD summary \n')

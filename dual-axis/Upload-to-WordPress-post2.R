@@ -17,7 +17,7 @@ blogfile <- paste0(blogfldr,"/Dual-Axis-Alternatives.Rmd")
 ## -- BLOG TITLE
 blogtitle <- "Dual-Axis Charts: Better Alternatives"
 ## --  PUBLISH or DRAFT?
-pub <- FALSE ## TRUE to publish; FALSE for draft
+pub <- TRUE ## TRUE to publish; FALSE for draft
 ## -- NEW OR EDIT? 
 blogaction <- "editPost" ## "newPost", "editPost", "newPage"
 ## -- ID: needed for EDIT -> will determine which version of knit2wp function to run
